@@ -10,7 +10,7 @@ import TicketsListSkeleton from "../TicketsListSkeleton";
 import useTickets from "../../hooks/useTickets";
 import { i18n } from "../../translate/i18n";
 import { AuthContext } from "../../context/Auth/AuthContext";
-import { socketConnection } from "../../services/socket";
+import { SocketContext } from "../../context/Socket/SocketContext";
 
 const useStyles = makeStyles((theme) => ({
   ticketsListWrapper: {
@@ -166,11 +166,11 @@ const TicketsListCustom = (props) => {
   } = props;
   const classes = useStyles();
   const [pageNumber, setPageNumber] = useState(1);
-  const [update, setUpdate] = useState(0);
   const [ticketsList, dispatch] = useReducer(reducer, []);
-  const [ticketsListUpdated, setTicketsListUpdated] = useState([]);
   const { user } = useContext(AuthContext);
   const { profile, queues } = user;
+
+  const socketManager = useContext(SocketContext);
 
   useEffect(() => {
     dispatch({ type: "RESET" });
@@ -202,7 +202,7 @@ const TicketsListCustom = (props) => {
 
   useEffect(() => {
     const companyId = localStorage.getItem("companyId");
-    const socket = socketConnection({ companyId });
+    const socket = socketManager.getSocket(companyId);
 
     const shouldUpdateTicket = (ticket) =>
       (!ticket.userId || ticket.userId === user?.id || showAll) &&
@@ -211,7 +211,7 @@ const TicketsListCustom = (props) => {
     const notBelongsToUserQueues = (ticket) =>
       ticket.queueId && selectedQueueIds.indexOf(ticket.queueId) === -1;
 
-    socket.on("connect", () => {
+    socket.on("ready", () => {
       if (status) {
         socket.emit("joinTickets", status);
       } else {
@@ -220,6 +220,7 @@ const TicketsListCustom = (props) => {
     });
 
     socket.on(`company-${companyId}-ticket`, (data) => {
+      
       if (data.action === "updateUnread") {
         dispatch({
           type: "RESET_UNREAD",
@@ -227,7 +228,7 @@ const TicketsListCustom = (props) => {
         });
       }
 
-      if (data.action === "update" && shouldUpdateTicket(data.ticket)) {
+      if (data.action === "update" && shouldUpdateTicket(data.ticket) && data.ticket.status === status) {
         dispatch({
           type: "UPDATE_TICKET",
           payload: data.ticket,
@@ -235,31 +236,25 @@ const TicketsListCustom = (props) => {
       }
 
       if (data.action === "update" && notBelongsToUserQueues(data.ticket)) {
-        dispatch({ type: "DELETE_TICKET", payload: data.ticket?.id });
+        dispatch({ type: "DELETE_TICKET", payload: data.ticket.id });
       }
 
       if (data.action === "delete") {
-        dispatch({ type: "DELETE_TICKET", payload: data?.ticketId });
-        
-      }
-
-      if (data.action === "removeFromList") {
         dispatch({ type: "DELETE_TICKET", payload: data.ticketId });
       }
-
     });
 
     socket.on(`company-${companyId}-appMessage`, (data) => {
       const queueIds = queues.map((q) => q.id);
       if (
         profile === "user" &&
-        (queueIds.indexOf(data.ticket.queue?.id) === -1 ||
+        (queueIds.indexOf(data.ticket?.queue?.id) === -1 ||
           data.ticket.queue === null)
       ) {
         return;
       }
 
-      if (data.action === "create" && shouldUpdateTicket(data.ticket)) {
+      if (data.action === "create" && shouldUpdateTicket(data.ticket) && ( status === undefined || data.ticket.status === status)) {
         dispatch({
           type: "UPDATE_TICKET_UNREAD_MESSAGES",
           payload: data.ticket,
@@ -279,7 +274,7 @@ const TicketsListCustom = (props) => {
     return () => {
       socket.disconnect();
     };
-  }, [status, showAll, user, selectedQueueIds, tags, users, profile, queues]);
+  }, [status, showAll, user, selectedQueueIds, tags, users, profile, queues, socketManager]);
 
   useEffect(() => {
     if (typeof updateCount === "function") {
@@ -287,7 +282,6 @@ const TicketsListCustom = (props) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketsList]);
-
 
   const loadMore = () => {
     setPageNumber((prevState) => prevState + 1);
@@ -325,7 +319,7 @@ const TicketsListCustom = (props) => {
           ) : (
             <>
               {ticketsList.map((ticket) => (
-                <TicketListItem ticket={ticket} setUpdate={setUpdate} key={ticket.id} />
+                <TicketListItem ticket={ticket} key={ticket.id} />
               ))}
             </>
           )}

@@ -39,6 +39,30 @@ class Plan extends Model<Plan> {
 
   @UpdatedAt
   updatedAt: Date;
+
+  @Column
+  useSchedules: boolean;   
+
+  @Column
+  useCampaigns: boolean; 
+  
+  @Column
+  useInternalChat: boolean;   
+  
+  @Column
+  useExternalApi: boolean;   
+
+  @Column
+  useKanban: boolean;
+
+  @Column
+  useOpenAi: boolean;
+
+  @Column
+  useIntegrations: boolean;
+  
+  @Column
+  useInternal: boolean; 
 }
 
 export default Plan;

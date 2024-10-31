@@ -17,6 +17,7 @@ import ContactCustomField from "./ContactCustomField";
 import Ticket from "./Ticket";
 import Company from "./Company";
 import Schedule from "./Schedule";
+import Whatsapp from "./Whatsapp";
 
 @Table
 class Contact extends Model<Contact> {
@@ -42,10 +43,6 @@ class Contact extends Model<Contact> {
   @Column
   profilePicUrl: string;
 
-  @Default("whatsapp")
-  @Column
-  channel: string;
-
   @Default(false)
   @Column
   isGroup: boolean;
@@ -62,6 +59,10 @@ class Contact extends Model<Contact> {
   @HasMany(() => ContactCustomField)
   extraInfo: ContactCustomField[];
 
+  @Default(true)
+  @Column
+  active: boolean;
+
   @ForeignKey(() => Company)
   @Column
   companyId: number;
@@ -75,6 +76,13 @@ class Contact extends Model<Contact> {
     hooks: true
   })
   schedules: Schedule[];
+
+  @ForeignKey(() => Whatsapp)
+  @Column
+  whatsappId: number;
+
+  @BelongsTo(() => Whatsapp)
+  whatsapp: Whatsapp;
 }
 
 export default Contact;

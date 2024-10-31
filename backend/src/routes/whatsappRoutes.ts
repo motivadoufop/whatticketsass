@@ -7,13 +7,13 @@ const whatsappRoutes = express.Router();
 
 whatsappRoutes.get("/whatsapp/", isAuth, WhatsAppController.index);
 
-whatsappRoutes.post("/facebook/", isAuth, WhatsAppController.storeFacebook);
-
 whatsappRoutes.post("/whatsapp/", isAuth, WhatsAppController.store);
 
 whatsappRoutes.get("/whatsapp/:whatsappId", isAuth, WhatsAppController.show);
 
 whatsappRoutes.put("/whatsapp/:whatsappId", isAuth, WhatsAppController.update);
+
+whatsappRoutes.post("/whatsapp-restart/", isAuth, WhatsAppController.restart);
 
 whatsappRoutes.delete(
   "/whatsapp/:whatsappId",

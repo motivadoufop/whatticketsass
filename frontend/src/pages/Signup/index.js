@@ -6,88 +6,62 @@ import { useHistory } from "react-router-dom";
 import { Link as RouterLink } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Formik, Form, Field } from "formik";
-import {
-
-    Button,
-    CssBaseline,
-    TextField,
-    Grid,
-    Typography,
-    Container,
-
-    Link
-} from '@material-ui/core';
 import usePlans from "../../hooks/usePlans";
+import Avatar from "@material-ui/core/Avatar";
+import Button from "@material-ui/core/Button";
+import CssBaseline from "@material-ui/core/CssBaseline";
+import TextField from "@material-ui/core/TextField";
+import Link from "@material-ui/core/Link";
+import Grid from "@material-ui/core/Grid";
 import Box from "@material-ui/core/Box";
+import InputMask from 'react-input-mask';
+import api from "../../services/api";
 import {
-	
+	FormControl,
 	InputLabel,
 	MenuItem,
 	Select,
 } from "@material-ui/core";
 import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
+import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
+import Container from "@material-ui/core/Container";
 import { i18n } from "../../translate/i18n";
+
 import { openApi } from "../../services/api";
 import toastError from "../../errors/toastError";
 import moment from "moment";
-import logo from "../../assets/logologin.png";
-
-// const Copyright = () => {
-// 	return (
-// 		<Typography variant="body2" color="textSecondary" align="center">
-// 			{"Copyleft "}
-// 			<Link color="inherit" href="https://github.com/canove">
-// 				Canove
-// 			</Link>{" "}
-// 			{new Date().getFullYear()}
-// 			{"."}
-// 		</Typography>
-// 	);
-// };
+const Copyright = () => {
+	return (
+		<Typography variant="body2" color="textSecondary" align="center">
+			{"Copyright © "}
+			<Link color="inherit" href="#">
+				PLW
+			</Link>{" "}
+		   {new Date().getFullYear()}
+			{"."}
+		</Typography>
+	);
+};
 
 const useStyles = makeStyles(theme => ({
-  root: {
-    width: "100vw",
-    height: "100vh",
-    background: "",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "100% 100%",
-    backgroundPosition: "center",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-  },
-  paper: {
-    marginTop: theme.spacing(8),
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    padding: theme.spacing(2),
-    borderRadius: theme.spacing(2),
-    //backgroundColor: `rgba(${theme.palette.background.paper}, 0.8)`,
-    backgroundColor: theme.palette.background.paper,
-    boxShadow: "0px 3px 6px rgba(0, 0, 0, 0.16)",
-
-  },
-    avatar: {
-    margin: theme.spacing(1),
-    backgroundColor: theme.palette.secondary.main,
-  },
-  form: {
-    width: "100%", // Fix IE 11 issue.
-    marginTop: theme.spacing(1),
-  },
-  submit: {
-    margin: theme.spacing(3, 0, 2),
-  },
-  powered: {
-    color: "white"
-  }
+	paper: {
+		marginTop: theme.spacing(8),
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+	},
+	avatar: {
+		margin: theme.spacing(1),
+		backgroundColor: theme.palette.secondary.main,
+	},
+	form: {
+		width: "100%",
+		marginTop: theme.spacing(3),
+	},
+	submit: {
+		margin: theme.spacing(3, 0, 2),
+	},
 }));
 
 const UserSchema = Yup.object().shape({
@@ -102,17 +76,56 @@ const UserSchema = Yup.object().shape({
 const SignUp = () => {
 	const classes = useStyles();
 	const history = useHistory();
+	const [allowregister, setallowregister] = useState('enabled');
+    const [trial, settrial] = useState('3');
 	let companyId = null
+
+	useEffect(() => {
+        fetchallowregister();
+        fetchtrial();
+    }, []);
+
+
+    const fetchtrial = async () => {
+  
+ 
+    try {
+        const responsevvv = await api.get("/settings/trial");
+        const allowtrialX = responsevvv.data.value;
+        //console.log(allowregisterX);
+        settrial(allowtrialX);
+        } catch (error) {
+            console.error('Error retrieving trial', error);
+        }
+    };
+
+
+    const fetchallowregister = async () => {
+  
+ 
+    try {
+        const responsevv = await api.get("/settings/allowregister");
+        const allowregisterX = responsevv.data.value;
+        //console.log(allowregisterX);
+        setallowregister(allowregisterX);
+        } catch (error) {
+            console.error('Error retrieving allowregister', error);
+        }
+    };
+
+    if(allowregister === "disabled"){
+    	history.push("/login");    
+    }
 
 	const params = qs.parse(window.location.search)
 	if (params.companyId !== undefined) {
 		companyId = params.companyId
 	}
 
-	const initialState = { name: "", email: "", password: "", planId: "", };
+	const initialState = { name: "", email: "", phone: "", password: "", planId: "disabled", };
 
 	const [user] = useState(initialState);
-	const dueDate = moment().add(3, "day").format();
+	const dueDate = moment().add(trial, "day").format();
 	const handleSignUp = async values => {
 		Object.assign(values, { recurrence: "MENSAL" });
 		Object.assign(values, { dueDate: dueDate });
@@ -129,7 +142,7 @@ const SignUp = () => {
 	};
 
 	const [plans, setPlans] = useState([]);
-	const { list: listPlans } = usePlans();
+	const { register: listPlans } = usePlans();
 
 	useEffect(() => {
 		async function fetchData() {
@@ -139,18 +152,23 @@ const SignUp = () => {
 		fetchData();
 	}, []);
 
+	const logo = `${process.env.REACT_APP_BACKEND_URL}/public/logotipos/signup.png`;
+    const randomValue = Math.random(); // Generate a random number
+  
+    const logoWithRandom = `${logo}?r=${randomValue}`;
 
-return (
-    <div className={classes.root}>
-      <Container component="main" maxWidth="xs">
-        <CssBaseline />
-        <div className={classes.paper}>
-          <div>
-            <img style={{ margin: "0 auto", height: "80px", width: "100%" }} src={logo} alt="Whats" />
-          </div>
-          <Typography component="h1" variant="h5">
-            {i18n.t("signup.title")}
-          </Typography>
+
+	return (
+		<Container component="main" maxWidth="xs">
+			<CssBaseline />
+			<div className={classes.paper}>
+				<div>
+				<img style={{ margin: "0 auto", width: "80%" }} src={logoWithRandom} alt={`${process.env.REACT_APP_NAME_SYSTEM}`} />
+				</div>
+				{/*<Typography component="h1" variant="h5">
+					{i18n.t("signup.title")}
+				</Typography>*/}
+				{/* <form className={classes.form} noValidate onSubmit={handleSignUp}> */}
 				<Formik
 					initialValues={user}
 					enableReinitialize={true}
@@ -193,6 +211,31 @@ return (
 										required
 									/>
 								</Grid>
+								
+							<Grid item xs={12}>
+								<Field
+									as={InputMask}
+									mask="(99) 99999-9999"
+									variant="outlined"
+									fullWidth
+									id="phone"
+									name="phone"
+									error={touched.phone && Boolean(errors.phone)}
+									helperText={touched.phone && errors.phone}
+									autoComplete="phone"
+									required
+								>
+									{({ field }) => (
+										<TextField
+											{...field}
+											variant="outlined"
+											fullWidth
+											label="DDD988888888"
+											inputProps={{ maxLength: 11 }} // Definindo o limite de caracteres
+										/>
+									)}
+								</Field>
+							</Grid>
 								<Grid item xs={12}>
 									<Field
 										as={TextField}
@@ -219,9 +262,12 @@ return (
 										name="planId"
 										required
 									>
+                                        <MenuItem value="disabled" disabled>
+                                        	<em>Selecione seu plano de assinatura</em>
+										</MenuItem>
 										{plans.map((plan, key) => (
 											<MenuItem key={key} value={plan.id}>
-												{plan.name} - Atendentes: {plan.users} - WhatsApp: {plan.connections} - Filas: {plan.queues} - R$ {plan.value}
+										        {plan.name} - {plan.connections} WhatsApps - {plan.users} Usuários - R$ {plan.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
 											</MenuItem>
 										))}
 									</Field>
@@ -254,7 +300,6 @@ return (
 			</div>
 			<Box mt={5}>{/* <Copyright /> */}</Box>
 		</Container>
-		</div>
 	);
 };
 

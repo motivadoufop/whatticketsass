@@ -36,7 +36,10 @@ class QuickMessage extends Model<QuickMessage> {
 
   @BelongsTo(() => Company)
   company: Company;
-
+  
+  @Column
+  geral: boolean;
+  
   @BelongsTo(() => User)
   user: User;
 
@@ -45,6 +48,19 @@ class QuickMessage extends Model<QuickMessage> {
 
   @UpdatedAt
   updatedAt: Date;
+
+  @Column
+  get mediaPath(): string | null {
+    if (this.getDataValue("mediaPath")) {
+      
+      return `${process.env.BACKEND_URL}${process.env.PROXY_PORT ?`:${process.env.PROXY_PORT}`:""}/public/quickMessage/${this.getDataValue("mediaPath")}`;
+
+    }
+    return null;
+  }
+  
+  @Column
+  mediaName: string;
 }
 
 export default QuickMessage;

@@ -25,6 +25,7 @@ import toastError from "../../errors/toastError";
 import QueueSelect from "../QueueSelect";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { Can } from "../Can";
+import useWhatsApps from "../../hooks/useWhatsApps";
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -73,12 +74,15 @@ const UserModal = ({ open, onClose, userId }) => {
 		email: "",
 		password: "",
 		profile: "user",
+		allTicket: "desabled"
 	};
 
 	const { user: loggedInUser } = useContext(AuthContext);
 
 	const [user, setUser] = useState(initialState);
 	const [selectedQueueIds, setSelectedQueueIds] = useState([]);
+	const [whatsappId, setWhatsappId] = useState(false);
+	const { loading, whatsApps } = useWhatsApps();
 
 	useEffect(() => {
 		const fetchUser = async () => {
@@ -90,6 +94,7 @@ const UserModal = ({ open, onClose, userId }) => {
 				});
 				const userQueueIds = data.queues?.map(queue => queue.id);
 				setSelectedQueueIds(userQueueIds);
+				setWhatsappId(data.whatsappId ? data.whatsappId : '');
 			} catch (err) {
 				toastError(err);
 			}
@@ -104,7 +109,7 @@ const UserModal = ({ open, onClose, userId }) => {
 	};
 
 	const handleSaveUser = async values => {
-		const userData = { ...values, queueIds: selectedQueueIds };
+		const userData = { ...values, whatsappId, queueIds: selectedQueueIds, allTicket: values.allTicket };
 		try {
 			if (userId) {
 				await api.put(`/users/${userId}`, userData);
@@ -221,6 +226,70 @@ const UserModal = ({ open, onClose, userId }) => {
 										/>
 									)}
 								/>
+								<Can
+									role={loggedInUser.profile}
+									perform="user-modal:editProfile"
+									yes={() => (
+										<FormControl variant="outlined" margin="dense" className={classes.maxWidth} fullWidth>
+											<InputLabel>
+												{i18n.t("userModal.form.whatsapp")}
+											</InputLabel>
+											<Field
+												as={Select}
+												value={whatsappId}
+												onChange={(e) => setWhatsappId(e.target.value)}
+												label={i18n.t("userModal.form.whatsapp")}
+
+											>
+												<MenuItem value={''}>&nbsp;</MenuItem>
+												{whatsApps.map((whatsapp) => (
+													<MenuItem key={whatsapp.id} value={whatsapp.id}>{whatsapp.name}</MenuItem>
+												))}
+											</Field>
+										</FormControl>
+									)}
+								/>
+								
+								
+								
+								<div className={classes.divider}>
+									<span className={classes.dividerText}>Liberações</span>
+								</div>
+								
+								<Can
+									role={loggedInUser.profile}
+									perform="user-modal:editProfile"
+									yes={() => (!loading &&
+										<div className={classes.textField}>
+											<FormControl
+												variant="outlined"
+												className={classes.maxWidth}
+												margin="dense"
+												fullWidth
+											>
+												<>
+													<InputLabel id="profile-selection-input-label">
+														{i18n.t("userModal.form.allTicket")}
+													</InputLabel>
+
+													<Field
+														as={Select}
+														label={i18n.t("allTicket.form.viewTags")}
+														name="allTicket"
+														labelId="allTicket-selection-label"
+														id="allTicket-selection"
+														required
+													>
+														<MenuItem value="enabled">{i18n.t("userModal.form.allTicketEnabled")}</MenuItem>
+														<MenuItem value="desabled">{i18n.t("userModal.form.allTicketDesabled")}</MenuItem>
+													</Field>
+												</>
+											</FormControl>
+										</div>
+
+									)}
+								/>
+								
 							</DialogContent>
 							<DialogActions>
 								<Button

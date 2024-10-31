@@ -53,6 +53,24 @@ const usePlans = () => {
         });
         return data;
     }
+    
+    const getPlanCompany = async (params, id) => {
+        const { data } = await api.request({
+            url: `/companies/listPlan/${id}`,
+            method: 'GET',
+            params
+        });
+        return data;
+    }
+    
+    const register = async (params) => {
+        const { data } = await api.request({
+            url: '/plans/register',
+            method: 'GET',
+            params
+        });
+        return data;
+    }
 
     return {
         getPlanList,
@@ -60,7 +78,9 @@ const usePlans = () => {
         save,
         update,
         finder,
-        remove
+        remove,
+        getPlanCompany,
+        register
     }
 }
 

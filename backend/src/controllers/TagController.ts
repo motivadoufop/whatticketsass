@@ -12,7 +12,6 @@ import SimpleListService from "../services/TagServices/SimpleListService";
 import SyncTagService from "../services/TagServices/SyncTagsService";
 import KanbanListService from "../services/TagServices/KanbanListService";
 
-
 type IndexQuery = {
   searchParam?: string;
   pageNumber?: string | number;
@@ -20,14 +19,13 @@ type IndexQuery = {
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { pageNumber, searchParam, kanban } = req.query as IndexQuery;
+  const { pageNumber, searchParam } = req.query as IndexQuery;
   const { companyId } = req.user;
 
   const { tags, count, hasMore } = await ListService({
     searchParam,
     pageNumber,
-    companyId,
-    kanban
+    companyId
   });
 
   return res.json({ tags, count, hasMore });
@@ -40,12 +38,12 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const tag = await CreateService({
     name,
     color,
-    kanban,
-    companyId
+    companyId,
+    kanban
   });
 
   const io = getIO();
-  io.emit("tag", {
+  io.to(`company-${companyId}-mainchannel`).emit("tag", {
     action: "create",
     tag
   });
@@ -83,7 +81,7 @@ export const update = async (
   const tag = await UpdateService({ tagData, id: tagId });
 
   const io = getIO();
-  io.emit("tag", {
+  io.to(`company-${req.user.companyId}-mainchannel`).emit("tag", {
     action: "update",
     tag
   });
@@ -100,7 +98,7 @@ export const remove = async (
   await DeleteService(tagId);
 
   const io = getIO();
-  io.emit("tag", {
+  io.to(`company-${req.user.companyId}-mainchannel`).emit("tag", {
     action: "delete",
     tagId
   });

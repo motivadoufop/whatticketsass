@@ -28,7 +28,10 @@ interface TicketData {
   status: string;
   queueId: number;
   userId: number;
-  justClose: boolean;
+  whatsappId: string;
+  useIntegration: boolean;
+  promptId: number;
+  integrationId: number;
 }
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
@@ -76,10 +79,32 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     userId,
     queueIds,
     withUnreadMessages,
-    companyId
+    companyId,
+
+
+  });
+  return res.status(200).json({ tickets, count, hasMore });
+};
+
+export const store = async (req: Request, res: Response): Promise<Response> => {
+  const { contactId, status, userId, queueId, whatsappId }: TicketData = req.body;
+  const { companyId } = req.user;
+
+  const ticket = await CreateTicketService({
+    contactId,
+    status,
+    userId,
+    companyId,
+    queueId,
+    whatsappId
   });
 
-  return res.status(200).json({ tickets, count, hasMore });
+  const io = getIO();
+  io.to(ticket.status).emit(`company-${companyId}-ticket`, {
+    action: "update",
+    ticket
+  });
+  return res.status(200).json(ticket);
 };
 
 export const kanban = async (req: Request, res: Response): Promise<Response> => {
@@ -115,9 +140,7 @@ export const kanban = async (req: Request, res: Response): Promise<Response> => 
   if (userIdsStringified) {
     usersIds = JSON.parse(userIdsStringified);
   }
-  console.log("withUnreadMessages")
 
-  console.log(withUnreadMessages)
   const { tickets, count, hasMore } = await ListTicketsServiceKanban({
     searchParam,
     tags: tagsIds,
@@ -137,33 +160,11 @@ export const kanban = async (req: Request, res: Response): Promise<Response> => 
   return res.status(200).json({ tickets, count, hasMore });
 };
 
-export const store = async (req: Request, res: Response): Promise<Response> => {
-  const { contactId, status, userId, queueId }: TicketData = req.body;
-  const { companyId } = req.user;
-
-  const ticket = await CreateTicketService({
-    contactId,
-    status,
-    userId,
-    companyId,
-    queueId
-  });
-
-  const io = getIO();
-  io.to(ticket.status).emit(`company-${companyId}-ticket`, {
-    action: "update",
-    ticket
-  });
-
-  return res.status(200).json(ticket);
-};
-
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { ticketId } = req.params;
   const { companyId } = req.user;
 
   const contact = await ShowTicketService(ticketId, companyId);
-
   return res.status(200).json(contact);
 };
 
@@ -192,6 +193,7 @@ export const update = async (
     companyId
   });
 
+
   return res.status(200).json(ticket);
 };
 
@@ -207,9 +209,11 @@ export const remove = async (
   const ticket = await DeleteTicketService(ticketId);
 
   const io = getIO();
-  io.to(ticket.status)
-    .to(ticketId)
-    .to("notification")
+  io.to(ticketId)
+    .to(`company-${companyId}-${ticket.status}`)
+    .to(`company-${companyId}-notification`)
+    .to(`queue-${ticket.queueId}-${ticket.status}`)
+    .to(`queue-${ticket.queueId}-notification`)
     .emit(`company-${companyId}-ticket`, {
       action: "delete",
       ticketId: +ticketId

@@ -11,6 +11,8 @@ import CompaniesManager from "../../components/CompaniesManager";
 import PlansManager from "../../components/PlansManager";
 import HelpsManager from "../../components/HelpsManager";
 import Options from "../../components/Settings/Options";
+import Uploader from "../../components/Settings/Uploader";
+import NewCompaniesManager from "../../pages/Companies";
 
 import { i18n } from "../../translate/i18n.js";
 import { toast } from "react-toastify";
@@ -32,7 +34,7 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
   },
   tab: {
-    backgroundColor: theme.mode === 'light' ? "#f2f2f2" : "#7f7f7f",
+    backgroundColor: theme.palette.options,
     borderRadius: 4,
   },
   paper: {
@@ -166,7 +168,9 @@ const SettingsCustom = () => {
         >
           <Tab label="Opções" value={"options"} />
           {schedulesEnabled && <Tab label="Horários" value={"schedules"} />}
+		  {isSuper() ? <Tab label="Logo" value={"uploader"} /> : null}
           {isSuper() ? <Tab label="Empresas" value={"companies"} /> : null}
+		  {isSuper() ? <Tab label="Cadastrar Empresa" value={"newcompanie"} /> : null}
           {isSuper() ? <Tab label="Planos" value={"plans"} /> : null}
           {isSuper() ? <Tab label="Ajuda" value={"helps"} /> : null}
         </Tabs>
@@ -200,6 +204,18 @@ const SettingsCustom = () => {
               <TabPanel
                 className={classes.container}
                 value={tab}
+                name={"newcompanie"}
+              >
+                <NewCompaniesManager />
+              </TabPanel>
+            )}
+          />
+          <OnlyForSuperUser
+            user={currentUser}
+            yes={() => (
+              <TabPanel
+                className={classes.container}
+                value={tab}
                 name={"plans"}
               >
                 <PlansManager />
@@ -215,6 +231,18 @@ const SettingsCustom = () => {
                 name={"helps"}
               >
                 <HelpsManager />
+              </TabPanel>
+            )}
+          />
+		 <OnlyForSuperUser
+            user={currentUser}
+            yes={() => (
+              <TabPanel
+                className={classes.container}
+                value={tab}
+                name={"uploader"}
+              >
+                <Uploader />
               </TabPanel>
             )}
           />

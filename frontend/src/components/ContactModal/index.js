@@ -92,6 +92,7 @@ const ContactModal = ({ open, onClose, contactId, initialValues, onSave }) => {
 			try {
 				const { data } = await api.get(`/contacts/${contactId}`);
 				if (isMounted.current) {
+					console.log(data)
 					setContact(data);
 				}
 			} catch (err) {
@@ -167,7 +168,7 @@ const ContactModal = ({ open, onClose, contactId, initialValues, onSave }) => {
 									name="number"
 									error={touched.number && Boolean(errors.number)}
 									helperText={touched.number && errors.number}
-									placeholder="5513912344321"
+									placeholder="5541998608485"
 									variant="outlined"
 									margin="dense"
 								/>
@@ -184,6 +185,12 @@ const ContactModal = ({ open, onClose, contactId, initialValues, onSave }) => {
 										variant="outlined"
 									/>
 								</div>
+								<Typography
+									style={{ marginBottom: 8, marginTop: 12 }}
+									variant="subtitle1"
+								>
+									{i18n.t("contactModal.form.whatsapp")} {contact?.whatsapp ? contact?.whatsapp.name : ""}
+								</Typography>
 								<Typography
 									style={{ marginBottom: 8, marginTop: 12 }}
 									variant="subtitle1"

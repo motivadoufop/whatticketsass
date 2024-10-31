@@ -19,7 +19,7 @@ import ChatList from "./ChatList";
 import ChatMessages from "./ChatMessages";
 import { UsersFilter } from "../../components/UsersFilter";
 import api from "../../services/api";
-import { socketConnection } from "../../services/socket";
+import { SocketContext } from "../../context/Socket/SocketContext";
 
 import { has, isObject } from "lodash";
 
@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme) => ({
     flex: 1,
     height: "100%",
     border: "1px solid rgba(0, 0, 0, 0.12)",
-    background: theme.palette.total,
+    backgroundColor: theme.palette.dark,
   },
   gridItem: {
     height: "100%",
@@ -167,6 +167,8 @@ function Chat(props) {
   const scrollToBottomRef = useRef();
   const { id } = useParams();
 
+  const socketManager = useContext(SocketContext);
+
   useEffect(() => {
     return () => {
       isMounted.current = false;
@@ -206,7 +208,7 @@ function Chat(props) {
 
   useEffect(() => {
     const companyId = localStorage.getItem("companyId");
-    const socket = socketConnection({ companyId });
+    const socket = socketManager.getSocket(companyId);
 
     socket.on(`company-${companyId}-chat-user-${user.id}`, (data) => {
       if (data.action === "create") {
@@ -273,7 +275,7 @@ function Chat(props) {
       socket.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentChat]);
+  }, [currentChat, socketManager]);
 
   const selectChat = (chat) => {
     try {
@@ -332,7 +334,7 @@ function Chat(props) {
     return (
       <Grid className={classes.gridContainer} container>
         <Grid className={classes.gridItem} md={3} item>
-          {user.profile === "admin" && (
+          
             <div className={classes.btnContainer}>
               <Button
                 onClick={() => {
@@ -345,7 +347,7 @@ function Chat(props) {
                 Nova
               </Button>
             </div>
-          )}
+          
           <ChatList
             chats={chats}
             pageInfo={chatsPageInfo}

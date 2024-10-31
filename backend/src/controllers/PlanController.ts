@@ -8,6 +8,7 @@ import ListPlansService from "../services/PlanService/ListPlansService";
 import CreatePlanService from "../services/PlanService/CreatePlanService";
 import UpdatePlanService from "../services/PlanService/UpdatePlanService";
 import ShowPlanService from "../services/PlanService/ShowPlanService";
+import FindAllPlanServiceRegister from "../services/PlanService/FindAllPlanServiceRegister";
 import FindAllPlanService from "../services/PlanService/FindAllPlanService";
 import DeletePlanService from "../services/PlanService/DeletePlanService";
 
@@ -23,6 +24,14 @@ type StorePlanData = {
   connections: number | 0;
   queues: number | 0;
   value: number;
+  useCampaigns?: boolean;
+  useSchedules?: boolean;
+  useInternalChat?: boolean;
+  useExternalApi?: boolean;
+  useKanban?: boolean;
+  useOpenAi?: boolean;
+  useIntegrations?: boolean;
+  useInternal?: boolean;
 };
 
 type UpdatePlanData = {
@@ -32,6 +41,14 @@ type UpdatePlanData = {
   connections?: number;
   queues?: number;
   value?: number;
+  useCampaigns?: boolean;
+  useSchedules?: boolean;
+  useInternalChat?: boolean;
+  useExternalApi?: boolean;
+  useKanban?: boolean;
+  useOpenAi?: boolean;
+  useIntegrations?: boolean;
+  useInternal?: boolean;
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
@@ -50,6 +67,13 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
 
   return res.status(200).json(plans);
 };
+
+export const register = async (req: Request, res: Response): Promise<Response> => {
+    const plans: Plan[] = await FindAllPlanServiceRegister();
+  
+    return res.status(200).json(plans);
+  };
+  
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const newPlan: StorePlanData = req.body;
@@ -99,16 +123,7 @@ export const update = async (
     throw new AppError(err.message);
   }
 
-  const { id, name, users, connections, queues, value } = planData;
-
-  const plan = await UpdatePlanService({
-    id,
-    name,
-    users,
-    connections,
-    queues,
-    value
-  });
+  const plan = await UpdatePlanService(planData);
 
   // const io = getIO();
   // io.emit("plan", {
