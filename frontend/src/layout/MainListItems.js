@@ -27,19 +27,24 @@ import ListIcon from "@material-ui/icons/ListAlt";
 import AnnouncementIcon from "@material-ui/icons/Announcement";
 import ForumIcon from "@material-ui/icons/Forum";
 import LocalAtmIcon from '@material-ui/icons/LocalAtm';
+import RotateRight from "@material-ui/icons/RotateRight";
 import { i18n } from "../translate/i18n";
 import { WhatsAppsContext } from "../context/WhatsApp/WhatsAppsContext";
 import { AuthContext } from "../context/Auth/AuthContext";
+import LoyaltyRoundedIcon from '@material-ui/icons/LoyaltyRounded';
 import { Can } from "../components/Can";
-import { socketConnection } from "../services/socket";
+import { SocketContext } from "../context/Socket/SocketContext";
 import { isArray } from "lodash";
 import TableChartIcon from '@material-ui/icons/TableChart';
 import api from "../services/api";
 import BorderColorIcon from '@material-ui/icons/BorderColor';
+import ToDoList from "../pages/ToDoList/";
 import toastError from "../errors/toastError";
 import { makeStyles } from "@material-ui/core/styles";
 import { AllInclusive, AttachFile, BlurCircular, DeviceHubOutlined, Schedule } from '@material-ui/icons';
 import usePlans from "../hooks/usePlans";
+import Typography from "@material-ui/core/Typography";
+import useVersion from "../hooks/useVersion";
 
 const useStyles = makeStyles((theme) => ({
   ListSubheader: {
@@ -148,6 +153,22 @@ const MainListItems = (props) => {
   const [searchParam] = useState("");
   const [chats, dispatch] = useReducer(reducer, []);
   const { getPlanCompany } = usePlans();
+  
+  const [version, setVersion] = useState(false);
+  
+  
+  const { getVersion } = useVersion();
+
+  const socketManager = useContext(SocketContext);
+
+  useEffect(() => {
+    async function fetchVersion() {
+      const _version = await getVersion();
+      setVersion(_version.version);
+    }
+    fetchVersion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
  
 
   useEffect(() => {
@@ -169,6 +190,7 @@ const MainListItems = (props) => {
       setShowExternalApi(planConfigs.plan.useExternalApi);
     }
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -178,11 +200,12 @@ const MainListItems = (props) => {
       fetchChats();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParam, pageNumber]);
 
   useEffect(() => {
     const companyId = localStorage.getItem("companyId");
-    const socket = socketConnection({ companyId });
+    const socket = socketManager.getSocket(companyId);
 
     socket.on(`company-${companyId}-chat`, (data) => {
       if (data.action === "new-message") {
@@ -195,7 +218,7 @@ const MainListItems = (props) => {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [socketManager]);
 
   useEffect(() => {
     let unreadsCount = 0;
@@ -279,11 +302,14 @@ const MainListItems = (props) => {
         icon={<WhatsAppIcon />}
       />
 	  
+	{showKanban && (  
 	  <ListItemLink
         to="/kanban"
         primary={i18n.t("Kanban")}
         icon={<TableChartIcon />}
       />
+	  )}
+
 
       <ListItemLink
         to="/quick-messages"
@@ -469,7 +495,23 @@ const MainListItems = (props) => {
               primary={i18n.t("mainDrawer.listItems.settings")}
               icon={<SettingsOutlinedIcon />}
             />
+			
+			
+            {!collapsed && <React.Fragment>
+              <Divider />
+              {/* 
+              // IMAGEM NO MENU
+              <Hidden only={['sm', 'xs']}>
+                <img style={{ width: "100%", padding: "10px" }} src={logo} alt="image" />            
+              </Hidden> 
+              */}
+              <Typography style={{ fontSize: "12px", padding: "10px", textAlign: "right", fontWeight: "bold" }}>
+                {`${version}`}
 
+              </Typography>
+            </React.Fragment>
+            }
+			
           </>
         )}
       />
