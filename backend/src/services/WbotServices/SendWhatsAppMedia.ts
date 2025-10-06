@@ -171,7 +171,6 @@ const SendWhatsAppMedia = async ({
       };
     }
 
-    console.log("options", options);
     const sentMessage = await wbot.sendMessage(
       `${ticket.contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`,
       {

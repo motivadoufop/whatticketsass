@@ -2,36 +2,45 @@ import * as Yup from "yup";
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
 
-import ListService from "../services/HelpServices/ListService";
-import CreateService from "../services/HelpServices/CreateService";
-import ShowService from "../services/HelpServices/ShowService";
-import UpdateService from "../services/HelpServices/UpdateService";
-import DeleteService from "../services/HelpServices/DeleteService";
-import FindService from "../services/HelpServices/FindService";
+import ListService from "../services/QuickMessageService/ListService";
+import CreateService from "../services/QuickMessageService/CreateService";
+import ShowService from "../services/QuickMessageService/ShowService";
+import UpdateService from "../services/QuickMessageService/UpdateService";
+import DeleteService from "../services/QuickMessageService/DeleteService";
+import FindService from "../services/QuickMessageService/FindService";
 
-import Help from "../models/Help";
+import QuickMessage from "../models/QuickMessage";
 
 import AppError from "../errors/AppError";
 
 type IndexQuery = {
   searchParam: string;
   pageNumber: string;
+  userId: string | number;
 };
 
 type StoreData = {
-  title: string;
-  description: string;
-  video?: string;
-  link?: string;
+  shortcode: string;
+  message: string;
+  userId: number | number;
+};
+
+type FindParams = {
+  companyId: string;
+  userId: string;
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { searchParam, pageNumber } = req.query as IndexQuery;
+  const { searchParam, pageNumber, userId } = req.query as IndexQuery;
+  const { companyId } = req.user;
 
   const { records, count, hasMore } = await ListService({
     searchParam,
-    pageNumber
+    pageNumber,
+    companyId,
+    userId
   });
+
   return res.json({ records, count, hasMore });
 };
 
@@ -40,21 +49,24 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const data = req.body as StoreData;
 
   const schema = Yup.object().shape({
-    title: Yup.string().required()
+    shortcode: Yup.string().required(),
+    message: Yup.string().required()
   });
 
   try {
     await schema.validate(data);
-  } catch (err) {
+  } catch (err: any) {
     throw new AppError(err.message);
   }
 
   const record = await CreateService({
-    ...data
+    ...data,
+    companyId,
+    userId: req.user.id
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-help`, {
+  io.emit(`company-${companyId}-quickmessage`, {
     action: "create",
     record
   });
@@ -78,12 +90,13 @@ export const update = async (
   const { companyId } = req.user;
 
   const schema = Yup.object().shape({
-    title: Yup.string().required()
+    shortcode: Yup.string().required(),
+    message: Yup.string().required()
   });
 
   try {
     await schema.validate(data);
-  } catch (err) {
+  } catch (err: any) {
     throw new AppError(err.message);
   }
 
@@ -91,11 +104,12 @@ export const update = async (
 
   const record = await UpdateService({
     ...data,
-    id
+    userId: req.user.id,
+    id,
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-help`, {
+  io.emit(`company-${companyId}-quickmessage`, {
     action: "update",
     record
   });
@@ -113,19 +127,20 @@ export const remove = async (
   await DeleteService(id);
 
   const io = getIO();
-  io.emit(`company-${companyId}-help`, {
+  io.emit(`company-${companyId}-quickmessage`, {
     action: "delete",
     id
   });
 
-  return res.status(200).json({ message: "Help deleted" });
+  return res.status(200).json({ message: "Contact deleted" });
 };
 
 export const findList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const records: Help[] = await FindService();
+  const params = req.query as FindParams;
+  const records: QuickMessage[] = await FindService(params);
 
   return res.status(200).json(records);
 };

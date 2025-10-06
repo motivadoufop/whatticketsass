@@ -1,33 +1,33 @@
+import React, { useState, useEffect } from "react";
 import {
-  FormControl,
+  makeStyles,
+  Paper,
   Grid,
-  IconButton,
+  FormControl,
   InputLabel,
   MenuItem,
-  Paper,
-  Select,
+  TextField,
   Table,
+  TableHead,
   TableBody,
   TableCell,
-  TableHead,
   TableRow,
-  TextField,
-  makeStyles,
+  IconButton,
+  Select,
 } from "@material-ui/core";
-import { Field, Form, Formik } from "formik";
-import React, { useEffect, useState } from "react";
+import { Formik, Form, Field } from "formik";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import ConfirmationModal from "../ConfirmationModal";
 
 import { Edit as EditIcon } from "@material-ui/icons";
 
-import { has, head, isArray } from "lodash";
 import { toast } from "react-toastify";
 import useCompanies from "../../hooks/useCompanies";
-import { useDate } from "../../hooks/useDate";
 import usePlans from "../../hooks/usePlans";
-import api from "../../services/api";
 import ModalUsers from "../ModalUsers";
+import api from "../../services/api";
+import { head, isArray, has } from "lodash";
+import { useDate } from "../../hooks/useDate";
 
 import moment from "moment";
 
